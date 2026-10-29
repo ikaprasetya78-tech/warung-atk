@@ -292,6 +292,7 @@
                             <tr>
                                 <th class="p-3.5">Barcode / SKU</th>
                                 <th class="p-3.5">Nama Produk</th>
+                                <th class="p-3.5">Kategori</th>
                                 <th class="p-3.5">Harga Beli</th>
                                 <th class="p-3.5">Harga Jual</th>
                                 <th class="p-3.5">Stok</th>
@@ -312,6 +313,7 @@
                             <tr>
                                 <th class="p-3.5">Nama Produk</th>
                                 <th class="p-3.5">Stok Saat Ini</th>
+                                <th class="p-3.5">Batas Min</th>
                                 <th class="p-3.5">Status</th>
                             </tr>
                         </thead>
@@ -344,6 +346,7 @@
                         <li class="py-2">Alat Tulis</li>
                         <li class="py-2">Kertas</li>
                         <li class="py-2">Sembako</li>
+                        <li class="py-2">Minuman</li>
                         <li class="py-2">Lainnya</li>
                     </ul>
                 </div>
@@ -477,9 +480,9 @@
         </div>
     </div>
 
-    <!-- MODAL PRODUK FORM -->
+    <!-- MODAL PRODUK FORM (LENGKAP) -->
     <div id="product-modal" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center hidden no-print">
-        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 class="text-lg font-extrabold text-slate-900" id="product-modal-title">Tambah Produk Baru</h3>
             <form id="product-form" onsubmit="saveProduct(event)" class="space-y-3">
                 <input type="hidden" id="pm-id">
@@ -487,9 +490,21 @@
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nama Produk *</label>
                     <input type="text" id="pm-name" required class="w-full p-2.5 border rounded-xl text-sm font-medium">
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Barcode / SKU *</label>
-                    <input type="text" id="pm-barcode" required class="w-full p-2.5 border rounded-xl text-sm font-medium">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Barcode / SKU *</label>
+                        <input type="text" id="pm-barcode" required class="w-full p-2.5 border rounded-xl text-sm font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Kategori *</label>
+                        <select id="pm-category" required class="w-full p-2.5 border rounded-xl text-sm font-medium bg-white">
+                            <option value="Alat Tulis">Alat Tulis</option>
+                            <option value="Kertas">Kertas</option>
+                            <option value="Sembako">Sembako</option>
+                            <option value="Minuman">Minuman</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
@@ -501,9 +516,19 @@
                         <input type="number" id="pm-sell-price" min="0" required class="w-full p-2.5 border rounded-xl text-sm font-bold">
                     </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Stok Awal</label>
-                    <input type="number" id="pm-stock" min="0" value="0" class="w-full p-2.5 border rounded-xl text-sm font-bold">
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Stok Awal</label>
+                        <input type="number" id="pm-stock" min="0" value="0" class="w-full p-2.5 border rounded-xl text-sm font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Stok Minimum</label>
+                        <input type="number" id="pm-min-stock" min="0" value="5" class="w-full p-2.5 border rounded-xl text-sm font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Satuan</label>
+                        <input type="text" id="pm-unit" value="Pcs" class="w-full p-2.5 border rounded-xl text-sm font-medium">
+                    </div>
                 </div>
                 <div class="flex justify-end space-x-2 pt-3">
                     <button type="button" onclick="closeProductModal()" class="px-4 py-2.5 bg-slate-200 text-slate-800 rounded-xl text-xs font-bold">Batal</button>
@@ -598,7 +623,7 @@
                     </div>
                     <div class="mt-3 flex justify-between items-end">
                         <div>
-                            <div class="text-[10px] text-slate-500">Stok: <span class="font-bold">${p.stock}</span></div>
+                            <div class="text-[10px] text-slate-500">Stok: <span class="font-bold">${p.stock} ${p.unit || 'Pcs'}</span></div>
                             <div class="font-extrabold text-emerald-700 text-sm mt-0.5">${formatRupiah(p.sellPrice)}</div>
                         </div>
                         <div class="bg-emerald-700 text-white p-1 rounded-lg text-xs">+</div>
@@ -668,29 +693,33 @@
             const total = cart.reduce((acc, item) => acc + (item.qty * item.product.sellPrice), 0);
             let totalModal = 0;
 
-            for (let item of cart) {
-                const product = window.dbProducts.find(p => p.id === item.product.id);
-                if (product) {
-                    totalModal += (product.buyPrice * item.qty);
-                    const docRef = window.cloudUtils.doc(window.dbCloud, "products", product.id);
-                    await window.cloudUtils.updateDoc(docRef, { stock: product.stock - item.qty });
+            try {
+                for (let item of cart) {
+                    const product = window.dbProducts.find(p => p.id === item.product.id);
+                    if (product) {
+                        totalModal += (product.buyPrice * item.qty);
+                        const docRef = window.cloudUtils.doc(window.dbCloud, "products", product.id);
+                        await window.cloudUtils.updateDoc(docRef, { stock: product.stock - item.qty });
+                    }
                 }
+
+                const saleData = {
+                    invoice: `ATK-${Date.now()}`,
+                    timestamp: new Date().toLocaleString('id-ID'),
+                    total: total,
+                    modal: totalModal,
+                    cashier: currentRole,
+                    method: document.getElementById('pay-method').value
+                };
+
+                await window.cloudUtils.addDoc(window.cloudCollections.sales, saleData);
+
+                alert("Transaksi Berhasil Disimpan ke Cloud!");
+                closePaymentModal();
+                clearCart();
+            } catch(err) {
+                alert("Gagal menyimpan transaksi: " + err.message);
             }
-
-            const saleData = {
-                invoice: `ATK-${Date.now()}`,
-                timestamp: new Date().toLocaleString('id-ID'),
-                total: total,
-                modal: totalModal,
-                cashier: currentRole,
-                method: document.getElementById('pay-method').value
-            };
-
-            await window.cloudUtils.addDoc(window.cloudCollections.sales, saleData);
-
-            alert("Transaksi Berhasil Disimpan ke Cloud!");
-            closePaymentModal();
-            clearCart();
         }
 
         window.renderProductsTable = function() {
@@ -698,9 +727,10 @@
                 <tr>
                     <td class="p-3.5 font-mono text-xs">${p.barcode}</td>
                     <td class="p-3.5 font-bold text-slate-800">${p.name}</td>
+                    <td class="p-3.5"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-bold">${p.category || 'Alat Tulis'}</span></td>
                     <td class="p-3.5">${formatRupiah(p.buyPrice)}</td>
                     <td class="p-3.5 font-extrabold text-emerald-700">${formatRupiah(p.sellPrice)}</td>
-                    <td class="p-3.5 font-bold">${p.stock}</td>
+                    <td class="p-3.5 font-bold">${p.stock} ${p.unit || 'Pcs'}</td>
                     <td class="p-3.5 text-center">
                         <button onclick="deleteProductCloud('${p.id}')" class="text-red-600 font-bold text-xs">Hapus</button>
                     </td>
@@ -717,23 +747,34 @@
 
         async function saveProduct(e) {
             e.preventDefault();
-            const productData = {
-                name: document.getElementById('pm-name').value,
-                barcode: document.getElementById('pm-barcode').value,
-                buyPrice: parseFloat(document.getElementById('pm-buy-price').value),
-                sellPrice: parseFloat(document.getElementById('pm-sell-price').value),
-                stock: parseInt(document.getElementById('pm-stock').value) || 0
-            };
+            try {
+                const productData = {
+                    name: document.getElementById('pm-name').value,
+                    barcode: document.getElementById('pm-barcode').value,
+                    category: document.getElementById('pm-category').value,
+                    buyPrice: parseFloat(document.getElementById('pm-buy-price').value),
+                    sellPrice: parseFloat(document.getElementById('pm-sell-price').value),
+                    stock: parseInt(document.getElementById('pm-stock').value) || 0,
+                    minStock: parseInt(document.getElementById('pm-min-stock').value) || 5,
+                    unit: document.getElementById('pm-unit').value || 'Pcs'
+                };
 
-            await window.cloudUtils.addDoc(window.cloudCollections.products, productData);
-            closeProductModal();
-            alert("Produk berhasil ditambahkan ke Cloud!");
+                await window.cloudUtils.addDoc(window.cloudCollections.products, productData);
+                closeProductModal();
+                alert("Produk berhasil disimpan ke Cloud!");
+            } catch (err) {
+                alert("Gagal menyimpan ke Cloud. Pastikan Rules Firebase sudah di-Publish!\nError: " + err.message);
+            }
         }
 
         async function deleteProductCloud(id) {
             if (!confirm("Hapus produk ini dari Cloud?")) return;
-            const docRef = window.cloudUtils.doc(window.dbCloud, "products", id);
-            await window.cloudUtils.deleteDoc(docRef);
+            try {
+                const docRef = window.cloudUtils.doc(window.dbCloud, "products", id);
+                await window.cloudUtils.deleteDoc(docRef);
+            } catch (err) {
+                alert("Gagal menghapus: " + err.message);
+            }
         }
 
         window.populateRestockSelect = function() {
@@ -767,8 +808,9 @@
             document.getElementById('stock-tbody').innerHTML = window.dbProducts.map(p => `
                 <tr>
                     <td class="p-3.5 font-bold text-slate-800">${p.name}</td>
-                    <td class="p-3.5 font-extrabold">${p.stock} Pcs</td>
-                    <td class="p-3.5">${p.stock <= 5 ? '<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded text-xs font-bold">Stok Menipis</span>' : '<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-xs font-bold">Aman</span>'}</td>
+                    <td class="p-3.5 font-extrabold">${p.stock} ${p.unit || 'Pcs'}</td>
+                    <td class="p-3.5 text-slate-500">${p.minStock || 5} ${p.unit || 'Pcs'}</td>
+                    <td class="p-3.5">${p.stock <= (p.minStock || 5) ? '<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded text-xs font-bold">Stok Menipis</span>' : '<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-xs font-bold">Aman</span>'}</td>
                 </tr>
             `).join('');
         };
@@ -790,7 +832,7 @@
             const totalLaba = window.dbSales.reduce((acc, s) => acc + (s.total - s.modal), 0);
 
             document.getElementById('dash-omzet-today').innerText = formatRupiah(totalOmzet);
-            document.getElementById('dash-laba-today').innerText = formatRupiah(labaToday);
+            document.getElementById('dash-laba-today').innerText = formatRupiah(totalLaba);
             document.getElementById('dash-trx-today-count').innerText = `${window.dbSales.length} Transaksi`;
             document.getElementById('dash-total-products').innerText = `${window.dbProducts.length} Produk`;
 
