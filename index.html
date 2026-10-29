@@ -495,8 +495,10 @@
 
             <!-- SECTION SETTINGS -->
             <section id="tab-settings" class="tab-content hidden space-y-6">
-                <h2 class="text-2xl font-extrabold text-slate-900">Pengaturan Toko</h2>
+                <h2 class="text-2xl font-extrabold text-slate-900">Pengaturan Toko & Backup Database</h2>
+                
                 <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm max-w-xl space-y-4">
+                    <h3 class="text-base font-extrabold text-slate-800 border-b pb-2">Informasi Toko</h3>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nama Toko</label>
                         <input type="text" id="setting-store-name" value="WARUNG ATK" class="w-full p-2.5 border rounded-xl text-sm font-bold">
@@ -506,6 +508,23 @@
                         <input type="text" id="setting-store-address" value="Kp Pasir Tukul RT 002 RW 004 Cileunyi Wetan" class="w-full p-2.5 border rounded-xl text-sm font-medium">
                     </div>
                     <button onclick="saveStoreSettings()" class="bg-emerald-700 text-white font-extrabold py-2.5 px-5 rounded-xl text-sm shadow">Simpan Pengaturan</button>
+                </div>
+
+                <!-- BACKUP & RESTORE DATABASE CARD -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm max-w-xl space-y-4">
+                    <h3 class="text-base font-extrabold text-slate-800 border-b pb-2">Backup & Restore Database</h3>
+                    <p class="text-xs text-slate-500">Download cadangan seluruh data toko kamu (Produk, Transaksi, Pengeluaran, Supplier, Pelanggan) ke file JSON, atau upload file JSON untuk restore data.</p>
+                    
+                    <div class="flex flex-wrap gap-3 pt-2">
+                        <button onclick="downloadDatabaseBackup()" class="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-4 py-2.5 rounded-xl text-xs shadow flex items-center gap-2">
+                            <i data-lucide="download" class="w-4 h-4"></i> Download Backup Database (.json)
+                        </button>
+
+                        <label class="bg-amber-600 hover:bg-amber-700 text-white font-extrabold px-4 py-2.5 rounded-xl text-xs shadow flex items-center gap-2 cursor-pointer">
+                            <i data-lucide="upload" class="w-4 h-4"></i> Import / Restore Database
+                            <input type="file" id="import-db-file" accept=".json" onchange="importDatabaseBackup(event)" class="hidden">
+                        </label>
+                    </div>
                 </div>
             </section>
 
@@ -1240,6 +1259,79 @@
                 </tr>
             `).join('');
         };
+
+        // BACKUP & RESTORE DATABASE FUNCTIONS
+        function downloadDatabaseBackup() {
+            const fullData = {
+                exportDate: new Date().toISOString(),
+                storeName: document.getElementById('store-name-display').innerText,
+                products: window.dbProducts,
+                sales: window.dbSales,
+                expenses: window.dbExpenses,
+                categories: window.dbCategories,
+                suppliers: window.dbSuppliers,
+                customers: window.dbCustomers
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `backup_warung_atk_${Date.now()}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+
+            window.logActivity('Backup Database', 'Pengguna mendownload file cadangan database');
+        }
+
+        async function importDatabaseBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (!confirm("Apakah kamu yakin ingin mengimpor data ini ke Cloud Firebase? Data baru dari file JSON akan ditambahkan.")) return;
+
+                    let count = 0;
+                    if (importedData.products && Array.isArray(importedData.products)) {
+                        for (let p of importedData.products) {
+                            delete p.id;
+                            await window.cloudUtils.addDoc(window.cloudCollections.products, p);
+                            count++;
+                        }
+                    }
+
+                    if (importedData.categories && Array.isArray(importedData.categories)) {
+                        for (let c of importedData.categories) {
+                            delete c.id;
+                            await window.cloudUtils.addDoc(window.cloudCollections.categories, c);
+                        }
+                    }
+
+                    if (importedData.suppliers && Array.isArray(importedData.suppliers)) {
+                        for (let s of importedData.suppliers) {
+                            delete s.id;
+                            await window.cloudUtils.addDoc(window.cloudCollections.suppliers, s);
+                        }
+                    }
+
+                    if (importedData.customers && Array.isArray(importedData.customers)) {
+                        for (let cust of importedData.customers) {
+                            delete cust.id;
+                            await window.cloudUtils.addDoc(window.cloudCollections.customers, cust);
+                        }
+                    }
+
+                    await window.logActivity('Import Database', 'Mengimpor data dari file JSON backup');
+                    alert(`Import Berhasil! ${count} data produk dan data terkait berhasil ditambahkan ke Cloud.`);
+                } catch (err) {
+                    alert("Format file JSON tidak valid atau terjadi error: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
 
         window.populateRestockSelect = function() {
             const select = document.getElementById('restock-product-select');
