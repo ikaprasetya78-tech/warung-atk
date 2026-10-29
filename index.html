@@ -643,8 +643,14 @@
 
                     <div class="border-t border-slate-200 pt-5 space-y-3">
                         <h3 class="font-extrabold text-slate-800 text-sm">Backup & Import Database</h3>
-                        <div class="flex flex-wrap gap-2">
+                        <div class="flex flex-wrap gap-2 items-center">
                             <button onclick="backupDatabase()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm">Export Data JSON</button>
+                            
+                            <label class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm cursor-pointer inline-flex items-center">
+                                <span>Import Data JSON</span>
+                                <input type="file" id="import-json-file" accept=".json" onchange="importDatabase(event)" class="hidden">
+                            </label>
+
                             <button onclick="resetToDemo()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm">Reset ke Data Demo Bawaan</button>
                         </div>
                     </div>
@@ -913,6 +919,7 @@
             if (tabName === 'customers') renderCustomers();
             if (tabName === 'activity-logs') renderLogs();
             if (tabName === 'restock') populateRestockSelects();
+            if (tabName === 'settings') populateSettingsInputs();
 
             lucide.createIcons();
             if (window.innerWidth < 768) toggleMobileSidebar();
@@ -1435,9 +1442,9 @@
         // STOCK & RESTOCK
         function renderStockTable() {
             document.getElementById('stock-tbody').innerHTML = db.products.map(p => {
-                let badge = `<span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-lg font-extrabold">🟢 Stok Aman</span>`;
-                if (p.stock === 0) badge = `<span class="bg-red-100 text-red-800 text-xs px-2.5 py-1 rounded-lg font-extrabold">🔴 Stok Habis</span>`;
-                else if (p.stock <= p.minStock) badge = `<span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-lg font-extrabold">🟡 Stok Menipis</span>`;
+                let badge = `<span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-lg font-extrabold">Stok Aman</span>`;
+                if (p.stock === 0) badge = `<span class="bg-red-100 text-red-800 text-xs px-2.5 py-1 rounded-lg font-extrabold">Stok Habis</span>`;
+                else if (p.stock <= p.minStock) badge = `<span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-lg font-extrabold">Stok Menipis</span>`;
 
                 return `
                     <tr>
@@ -1654,12 +1661,19 @@
             `).join('');
         }
 
-        // SETTINGS & BACKUP
+        // SETTINGS & BACKUP & IMPORT
+        function populateSettingsInputs() {
+            document.getElementById('setting-store-name').value = db.settings.storeName || '';
+            document.getElementById('setting-store-address').value = db.settings.storeAddress || '';
+            document.getElementById('setting-store-phone').value = db.settings.storePhone || '';
+            document.getElementById('setting-store-footer').value = db.settings.footerText || '';
+        }
+
         function saveStoreSettings() {
             db.settings.storeName = document.getElementById('setting-store-name').value;
             db.settings.storeAddress = document.getElementById('setting-store-address').value;
             db.settings.storePhone = document.getElementById('setting-store-phone').value;
-            db.settings.storeFooter = document.getElementById('setting-store-footer').value;
+            db.settings.footerText = document.getElementById('setting-store-footer').value;
             saveDB();
             document.getElementById('store-name-display').innerText = db.settings.storeName;
             document.getElementById('store-address-display').innerText = db.settings.storeAddress;
@@ -1672,6 +1686,29 @@
             dlAnchorElem.setAttribute("href", dataStr);
             dlAnchorElem.setAttribute("download", `Backup_WARUNG_ATK_${new Date().toISOString().slice(0,10)}.json`);
             dlAnchorElem.click();
+        }
+
+        function importDatabase(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (importedData.products && Array.isArray(importedData.products)) {
+                        db = importedData;
+                        saveDB();
+                        alert("Database berhasil di-import! Halaman akan memuat ulang data terbaru.");
+                        location.reload();
+                    } else {
+                        alert("Format file JSON tidak valid!");
+                    }
+                } catch (err) {
+                    alert("Gagal membaca file JSON: " + err.message);
+                }
+            };
+            reader.readAsText(file);
         }
 
         function resetToDemo() {
