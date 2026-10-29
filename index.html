@@ -341,7 +341,7 @@
             <section id="tab-categories" class="tab-content hidden space-y-4">
                 <div class="flex justify-between items-center">
                     <h2 class="text-2xl font-extrabold text-slate-900">Kategori Produk</h2>
-                    <button onclick="openAddCategoryModal()" class="bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold">Tambah Kategori Baru</button>
+                    <button onclick="openAddCategoryModal()" class="bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow">Tambah Kategori Baru</button>
                 </div>
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 max-w-md">
                     <ul id="categories-cloud-list" class="divide-y divide-slate-100 text-sm font-bold text-slate-700"></ul>
@@ -370,22 +370,26 @@
             <!-- SECTION REKAP OMZET & LABA -->
             <section id="tab-reports" class="tab-content hidden space-y-6">
                 <h2 class="text-2xl font-extrabold text-slate-900">Rekap Omzet & Laba Bersih Cloud</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <p class="text-[11px] font-bold text-slate-400 uppercase">Total Omzet</p>
-                        <h3 class="text-xl font-extrabold text-slate-900 mt-1" id="report-total-omzet">Rp 0</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase">Total Omzet</p>
+                        <h3 class="text-lg font-extrabold text-slate-900 mt-1" id="report-total-omzet">Rp 0</h3>
                     </div>
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <p class="text-[11px] font-bold text-slate-400 uppercase">Total Modal (HPP)</p>
-                        <h3 class="text-xl font-extrabold text-amber-600 mt-1" id="report-total-modal">Rp 0</h3>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase">Total Modal (HPP)</p>
+                        <h3 class="text-lg font-extrabold text-amber-600 mt-1" id="report-total-modal">Rp 0</h3>
                     </div>
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <p class="text-[11px] font-bold text-slate-400 uppercase">Pengeluaran Toko</p>
-                        <h3 class="text-xl font-extrabold text-red-600 mt-1" id="report-total-expenses">Rp 0</h3>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase">Laba Kotor</p>
+                        <h3 class="text-lg font-extrabold text-blue-600 mt-1" id="report-laba-kotor">Rp 0</h3>
                     </div>
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <p class="text-[11px] font-bold text-slate-400 uppercase">Laba Bersih</p>
-                        <h3 class="text-xl font-extrabold text-emerald-700 mt-1" id="report-net-profit">Rp 0</h3>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase">Pengeluaran Toko</p>
+                        <h3 class="text-lg font-extrabold text-red-600 mt-1" id="report-total-expenses">Rp 0</h3>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase">Laba Bersih</p>
+                        <h3 class="text-lg font-extrabold text-emerald-700 mt-1" id="report-net-profit">Rp 0</h3>
                     </div>
                 </div>
             </section>
@@ -894,7 +898,7 @@
             await window.cloudUtils.deleteDoc(docRef);
         }
 
-        // CATEGORIES FUNCTIONS
+        // CATEGORIES FUNCTIONS (WITH EDIT & DELETE)
         window.renderCategoriesList = function() {
             const list = document.getElementById('categories-cloud-list');
             if (window.dbCategories.length === 0) {
@@ -904,7 +908,10 @@
             list.innerHTML = window.dbCategories.map(c => `
                 <li class="py-2.5 flex justify-between items-center">
                     <span>${c.name}</span>
-                    <button onclick="deleteCategoryCloud('${c.id}')" class="text-red-600 text-xs font-bold hover:underline">Hapus</button>
+                    <div class="space-x-2">
+                        <button onclick="editCategoryCloud('${c.id}', '${c.name}')" class="text-blue-600 text-xs font-bold hover:underline">Edit</button>
+                        <button onclick="deleteCategoryCloud('${c.id}')" class="text-red-600 text-xs font-bold hover:underline">Hapus</button>
+                    </div>
                 </li>
             `).join('');
         };
@@ -923,6 +930,15 @@
             if (name) {
                 await window.cloudUtils.addDoc(window.cloudCollections.categories, { name: name });
                 alert("Kategori berhasil ditambahkan ke Cloud!");
+            }
+        }
+
+        async function editCategoryCloud(id, oldName) {
+            const newName = prompt("Ubah Nama Kategori:", oldName);
+            if (newName && newName !== oldName) {
+                const docRef = window.cloudUtils.doc(window.dbCloud, "categories", id);
+                await window.cloudUtils.updateDoc(docRef, { name: newName });
+                alert("Kategori berhasil diperbarui!");
             }
         }
 
@@ -1011,6 +1027,7 @@
 
             document.getElementById('report-total-omzet').innerText = formatRupiah(omzet);
             document.getElementById('report-total-modal').innerText = formatRupiah(modal);
+            document.getElementById('report-laba-kotor').innerText = formatRupiah(labaKotor);
             document.getElementById('report-total-expenses').innerText = formatRupiah(totalPengeluaran);
             document.getElementById('report-net-profit').innerText = formatRupiah(labaBersih);
         };
