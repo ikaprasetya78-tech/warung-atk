@@ -206,7 +206,6 @@
                     </div>
                 </div>
 
-                <!-- RECENT TRANSACTIONS TABLE -->
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div class="p-4 border-b border-slate-200 flex justify-between items-center">
                         <h3 class="font-extrabold text-slate-800">Transaksi Penjualan Terbaru (Real-Time)</h3>
@@ -340,15 +339,12 @@
 
             <!-- SECTION KATEGORI PRODUK -->
             <section id="tab-categories" class="tab-content hidden space-y-4">
-                <h2 class="text-2xl font-extrabold text-slate-900">Kategori Produk</h2>
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-extrabold text-slate-900">Kategori Produk</h2>
+                    <button onclick="openAddCategoryModal()" class="bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold">Tambah Kategori Baru</button>
+                </div>
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 max-w-md">
-                    <ul class="divide-y divide-slate-100 text-sm font-bold text-slate-700">
-                        <li class="py-2">Alat Tulis</li>
-                        <li class="py-2">Kertas</li>
-                        <li class="py-2">Sembako</li>
-                        <li class="py-2">Minuman</li>
-                        <li class="py-2">Lainnya</li>
-                    </ul>
+                    <ul id="categories-cloud-list" class="divide-y divide-slate-100 text-sm font-bold text-slate-700"></ul>
                 </div>
             </section>
 
@@ -371,30 +367,48 @@
                 </div>
             </section>
 
-            <!-- SECTION REKAP -->
+            <!-- SECTION REKAP OMZET & LABA -->
             <section id="tab-reports" class="tab-content hidden space-y-6">
-                <h2 class="text-2xl font-extrabold text-slate-900">Rekap Omzet & Laba Bersih</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <h2 class="text-2xl font-extrabold text-slate-900">Rekap Omzet & Laba Bersih Cloud</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                         <p class="text-[11px] font-bold text-slate-400 uppercase">Total Omzet</p>
-                        <h3 class="text-2xl font-extrabold text-slate-900 mt-1" id="report-total-omzet">Rp 0</h3>
+                        <h3 class="text-xl font-extrabold text-slate-900 mt-1" id="report-total-omzet">Rp 0</h3>
                     </div>
                     <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                         <p class="text-[11px] font-bold text-slate-400 uppercase">Total Modal (HPP)</p>
-                        <h3 class="text-2xl font-extrabold text-amber-600 mt-1" id="report-total-modal">Rp 0</h3>
+                        <h3 class="text-xl font-extrabold text-amber-600 mt-1" id="report-total-modal">Rp 0</h3>
                     </div>
                     <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <p class="text-[11px] font-bold text-slate-400 uppercase">Estimasi Laba Kotor</p>
-                        <h3 class="text-2xl font-extrabold text-emerald-700 mt-1" id="report-net-profit">Rp 0</h3>
+                        <p class="text-[11px] font-bold text-slate-400 uppercase">Pengeluaran Toko</p>
+                        <h3 class="text-xl font-extrabold text-red-600 mt-1" id="report-total-expenses">Rp 0</h3>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <p class="text-[11px] font-bold text-slate-400 uppercase">Laba Bersih</p>
+                        <h3 class="text-xl font-extrabold text-emerald-700 mt-1" id="report-net-profit">Rp 0</h3>
                     </div>
                 </div>
             </section>
 
             <!-- SECTION PENGELUARAN TOKO -->
             <section id="tab-expenses" class="tab-content hidden space-y-4">
-                <h2 class="text-2xl font-extrabold text-slate-900">Pengeluaran Toko</h2>
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 max-w-lg">
-                    <p class="text-xs text-slate-500">Catatan pengeluaran operasional warung.</p>
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-extrabold text-slate-900">Pengeluaran Operasional Toko</h2>
+                    <button onclick="openExpenseModal()" class="bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow">Catat Pengeluaran Baru</button>
+                </div>
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-50 text-[11px] font-bold uppercase text-slate-400 border-b border-slate-200">
+                            <tr>
+                                <th class="p-3.5">Waktu</th>
+                                <th class="p-3.5">Kategori</th>
+                                <th class="p-3.5">Keterangan</th>
+                                <th class="p-3.5">Nominal</th>
+                                <th class="p-3.5 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expenses-tbody" class="divide-y divide-slate-100"></tbody>
+                    </table>
                 </div>
             </section>
 
@@ -480,6 +494,31 @@
         </div>
     </div>
 
+    <!-- MODAL PENGELUARAN -->
+    <div id="expense-modal" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center hidden no-print">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <h3 class="text-lg font-extrabold text-slate-900">Catat Pengeluaran Operasional</h3>
+            <form onsubmit="saveExpenseCloud(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Kategori Pengeluaran</label>
+                    <input type="text" id="exp-category" placeholder="Contoh: Listrik, Kebersihan, Gaji" required class="w-full p-2.5 border rounded-xl text-sm font-medium">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Keterangan</label>
+                    <input type="text" id="exp-desc" placeholder="Rincian pengeluaran" required class="w-full p-2.5 border rounded-xl text-sm font-medium">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nominal (Rp)</label>
+                    <input type="number" id="exp-amount" min="1" required class="w-full p-2.5 border rounded-xl text-sm font-bold">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeExpenseModal()" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-xl text-xs font-bold">Batal</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-700 text-white rounded-xl text-xs font-extrabold">Simpan ke Cloud</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- MODAL PRODUK FORM -->
     <div id="product-modal" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center hidden no-print">
         <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
@@ -497,13 +536,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Kategori *</label>
-                        <select id="pm-category" required class="w-full p-2.5 border rounded-xl text-sm font-medium bg-white">
-                            <option value="Alat Tulis">Alat Tulis</option>
-                            <option value="Kertas">Kertas</option>
-                            <option value="Sembako">Sembako</option>
-                            <option value="Minuman">Minuman</option>
-                            <option value="Lainnya">Lainnya</option>
-                        </select>
+                        <select id="pm-category" required class="w-full p-2.5 border rounded-xl text-sm font-medium bg-white"></select>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
@@ -559,7 +592,9 @@
         window.dbCloud = dbCloud;
         window.cloudCollections = {
             products: collection(dbCloud, "products"),
-            sales: collection(dbCloud, "sales")
+            sales: collection(dbCloud, "sales"),
+            expenses: collection(dbCloud, "expenses"),
+            categories: collection(dbCloud, "categories")
         };
         window.cloudUtils = { addDoc, doc, updateDoc, deleteDoc };
 
@@ -578,12 +613,26 @@
             window.renderDashboard();
             window.renderReports();
         });
+
+        onSnapshot(window.cloudCollections.expenses, (snapshot) => {
+            window.dbExpenses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            window.renderExpensesTable();
+            window.renderReports();
+        });
+
+        onSnapshot(window.cloudCollections.categories, (snapshot) => {
+            window.dbCategories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            window.renderCategoriesList();
+            window.populateCategoryDropdown();
+        });
     </script>
 
     <!-- APPLICATION LOGIC -->
     <script>
         window.dbProducts = [];
         window.dbSales = [];
+        window.dbExpenses = [];
+        window.dbCategories = [];
         let cart = [];
         let currentRole = "ADMIN";
 
@@ -803,6 +852,86 @@
             }
         }
 
+        // EXPENSE FUNCTIONS
+        function openExpenseModal() { document.getElementById('expense-modal').classList.remove('hidden'); }
+        function closeExpenseModal() { document.getElementById('expense-modal').classList.add('hidden'); }
+
+        async function saveExpenseCloud(e) {
+            e.preventDefault();
+            const expenseData = {
+                category: document.getElementById('exp-category').value,
+                desc: document.getElementById('exp-desc').value,
+                amount: parseFloat(document.getElementById('exp-amount').value) || 0,
+                timestamp: new Date().toLocaleString('id-ID')
+            };
+
+            try {
+                await window.cloudUtils.addDoc(window.cloudCollections.expenses, expenseData);
+                closeExpenseModal();
+                alert("Pengeluaran toko berhasil disimpan ke Cloud!");
+            } catch(err) {
+                alert("Gagal menyimpan pengeluaran: " + err.message);
+            }
+        }
+
+        window.renderExpensesTable = function() {
+            document.getElementById('expenses-tbody').innerHTML = window.dbExpenses.map(e => `
+                <tr>
+                    <td class="p-3.5 text-xs">${e.timestamp}</td>
+                    <td class="p-3.5"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-bold">${e.category}</span></td>
+                    <td class="p-3.5 font-medium text-slate-800">${e.desc}</td>
+                    <td class="p-3.5 font-extrabold text-red-600">${formatRupiah(e.amount)}</td>
+                    <td class="p-3.5 text-center">
+                        <button onclick="deleteExpenseCloud('${e.id}')" class="text-red-600 font-bold text-xs hover:underline">Hapus</button>
+                    </td>
+                </tr>
+            `).join('');
+        };
+
+        async function deleteExpenseCloud(id) {
+            if(!confirm("Hapus catatan pengeluaran ini?")) return;
+            const docRef = window.cloudUtils.doc(window.dbCloud, "expenses", id);
+            await window.cloudUtils.deleteDoc(docRef);
+        }
+
+        // CATEGORIES FUNCTIONS
+        window.renderCategoriesList = function() {
+            const list = document.getElementById('categories-cloud-list');
+            if (window.dbCategories.length === 0) {
+                list.innerHTML = `<li class="py-2 text-slate-400 font-medium">Alat Tulis</li><li class="py-2 text-slate-400 font-medium">Kertas</li><li class="py-2 text-slate-400 font-medium">Sembako</li>`;
+                return;
+            }
+            list.innerHTML = window.dbCategories.map(c => `
+                <li class="py-2.5 flex justify-between items-center">
+                    <span>${c.name}</span>
+                    <button onclick="deleteCategoryCloud('${c.id}')" class="text-red-600 text-xs font-bold hover:underline">Hapus</button>
+                </li>
+            `).join('');
+        };
+
+        window.populateCategoryDropdown = function() {
+            const select = document.getElementById('pm-category');
+            if (!select) return;
+            const defaultCats = ["Alat Tulis", "Kertas", "Sembako", "Minuman", "Lainnya"];
+            const cloudCatNames = window.dbCategories.map(c => c.name);
+            const allCats = Array.from(new Set([...defaultCats, ...cloudCatNames]));
+            select.innerHTML = allCats.map(c => `<option value="${c}">${c}</option>`).join('');
+        };
+
+        async function openAddCategoryModal() {
+            const name = prompt("Masukkan Nama Kategori Baru:");
+            if (name) {
+                await window.cloudUtils.addDoc(window.cloudCollections.categories, { name: name });
+                alert("Kategori berhasil ditambahkan ke Cloud!");
+            }
+        }
+
+        async function deleteCategoryCloud(id) {
+            if(!confirm("Hapus kategori ini?")) return;
+            const docRef = window.cloudUtils.doc(window.dbCloud, "categories", id);
+            await window.cloudUtils.deleteDoc(docRef);
+        }
+
         window.populateRestockSelect = function() {
             const select = document.getElementById('restock-product-select');
             if (select) {
@@ -876,9 +1005,14 @@
         window.renderReports = function() {
             const omzet = window.dbSales.reduce((acc, s) => acc + s.total, 0);
             const modal = window.dbSales.reduce((acc, s) => acc + s.modal, 0);
+            const totalPengeluaran = window.dbExpenses.reduce((acc, e) => acc + e.amount, 0);
+            const labaKotor = omzet - modal;
+            const labaBersih = labaKotor - totalPengeluaran;
+
             document.getElementById('report-total-omzet').innerText = formatRupiah(omzet);
             document.getElementById('report-total-modal').innerText = formatRupiah(modal);
-            document.getElementById('report-net-profit').innerText = formatRupiah(omzet - modal);
+            document.getElementById('report-total-expenses').innerText = formatRupiah(totalPengeluaran);
+            document.getElementById('report-net-profit').innerText = formatRupiah(labaBersih);
         };
     </script>
 </body>
