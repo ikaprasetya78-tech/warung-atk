@@ -984,13 +984,14 @@
             document.getElementById('pm-buy-price').value = p.buyPrice || 0;
             document.getElementById('pm-sell-price').value = p.sellPrice || 0;
             document.getElementById('pm-stock').value = p.stock || 0;
-            document.getElementById('pm-min-stock').value = p.minStock || 5;
+            document.getElementById('pm-min-stock').value = p.minStock !== undefined ? p.minStock : 5;
             document.getElementById('pm-unit').value = p.unit || 'Pcs';
         };
 
         async function saveProduct(e) {
             e.preventDefault();
             const id = document.getElementById('pm-id').value;
+            const minStockValue = parseInt(document.getElementById('pm-min-stock').value);
             const productData = {
                 name: document.getElementById('pm-name').value,
                 barcode: document.getElementById('pm-barcode').value,
@@ -998,7 +999,7 @@
                 buyPrice: parseFloat(document.getElementById('pm-buy-price').value),
                 sellPrice: parseFloat(document.getElementById('pm-sell-price').value),
                 stock: parseInt(document.getElementById('pm-stock').value) || 0,
-                minStock: parseInt(document.getElementById('pm-min-stock').value) || 5,
+                minStock: isNaN(minStockValue) ? 5 : minStockValue,
                 unit: document.getElementById('pm-unit').value || 'Pcs'
             };
 
@@ -1373,15 +1374,28 @@
             alert("Pengaturan toko disimpan!");
         }
 
+        // RENDERING STOK BARANG
         window.renderStockTable = function() {
-            document.getElementById('stock-tbody').innerHTML = window.dbProducts.map(p => `
-                <tr>
-                    <td class="p-3.5 font-bold text-slate-800">${p.name}</td>
-                    <td class="p-3.5 font-extrabold">${p.stock} ${p.unit || 'Pcs'}</td>
-                    <td class="p-3.5 text-slate-500">${p.minStock || 5} ${p.unit || 'Pcs'}</td>
-                    <td class="p-3.5">${p.stock <= (p.minStock || 5) ? '<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded text-xs font-bold">Stok Menipis</span>' : '<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-xs font-bold">Aman</span>'}</td>
-                </tr>
-            `).join('');
+            document.getElementById('stock-tbody').innerHTML = window.dbProducts.map(p => {
+                const stock = parseInt(p.stock) || 0;
+                const minStock = p.minStock !== undefined && p.minStock !== null && p.minStock !== '' ? parseInt(p.minStock) : 5;
+                
+                let statusBadge = '<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg text-xs font-extrabold">Aman</span>';
+                if (stock <= 0) {
+                    statusBadge = '<span class="bg-red-100 text-red-800 px-2.5 py-1 rounded-lg text-xs font-extrabold">Stok Habis</span>';
+                } else if (stock <= minStock) {
+                    statusBadge = '<span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-lg text-xs font-extrabold">Stok Menipis</span>';
+                }
+
+                return `
+                    <tr>
+                        <td class="p-3.5 font-bold text-slate-800">${p.name}</td>
+                        <td class="p-3.5 font-extrabold">${stock} ${p.unit || 'Pcs'}</td>
+                        <td class="p-3.5 font-bold text-slate-500">${minStock} ${p.unit || 'Pcs'}</td>
+                        <td class="p-3.5">${statusBadge}</td>
+                    </tr>
+                `;
+            }).join('');
         };
 
         window.renderSalesHistory = function() {
@@ -1405,9 +1419,13 @@
             document.getElementById('dash-trx-today-count').innerText = `${window.dbSales.length} Transaksi`;
             document.getElementById('dash-total-products').innerText = `${window.dbProducts.length} Produk`;
 
-            // PERBAIKAN PERINGATAN STOK
-            const stokHabisCount = window.dbProducts.filter(p => (p.stock || 0) <= 0).length;
-            const stokMenipisCount = window.dbProducts.filter(p => (p.stock || 0) > 0 && (p.stock || 0) <= (p.minStock || 5)).length;
+            // PERINGATAN STOK DASHBOARD
+            const stokHabisCount = window.dbProducts.filter(p => (parseInt(p.stock) || 0) <= 0).length;
+            const stokMenipisCount = window.dbProducts.filter(p => {
+                const stock = parseInt(p.stock) || 0;
+                const minStock = p.minStock !== undefined && p.minStock !== null && p.minStock !== '' ? parseInt(p.minStock) : 5;
+                return stock > 0 && stock <= minStock;
+            }).length;
 
             document.getElementById('dash-stok-menipis').innerText = `${stokMenipisCount} Menipis`;
             document.getElementById('dash-stok-habis').innerText = `${stokHabisCount} Habis`;
@@ -1431,7 +1449,6 @@
             const ctx = document.getElementById('omzetChart');
             if (!ctx) return;
 
-            // Group sales by date
             const salesByDate = {};
             window.dbSales.slice(-7).forEach(s => {
                 const dateKey = s.timestamp ? s.timestamp.split(',')[0] : 'Hari ini';
