@@ -140,6 +140,9 @@
                 <button onclick="switchTab('customers')" class="nav-btn flex items-center w-full px-3.5 py-2.5 text-sm font-semibold rounded-xl text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 transition">
                     <i data-lucide="users" class="w-4 h-4 mr-3"></i> Pelanggan
                 </button>
+                <button onclick="switchTab('activity-log')" class="admin-only nav-btn flex items-center w-full px-3.5 py-2.5 text-sm font-semibold rounded-xl text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 transition">
+                    <i data-lucide="history" class="w-4 h-4 mr-3"></i> Activity Log
+                </button>
                 <button onclick="switchTab('settings')" class="admin-only nav-btn flex items-center w-full px-3.5 py-2.5 text-sm font-semibold rounded-xl text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 transition">
                     <i data-lucide="settings" class="w-4 h-4 mr-3"></i> Pengaturan Toko
                 </button>
@@ -426,17 +429,67 @@
 
             <!-- SECTION SUPPLIER -->
             <section id="tab-suppliers" class="tab-content hidden space-y-4">
-                <h2 class="text-2xl font-extrabold text-slate-900">Data Supplier</h2>
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-                    <p class="text-xs text-slate-500">Daftar kontak pemasok barang ATK & Sembako.</p>
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-slate-900">Data Supplier (Cloud)</h2>
+                        <p class="text-xs text-slate-500">Kelola kontak pemasok barang toko.</p>
+                    </div>
+                    <button onclick="openSupplierModal()" class="bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow">Tambah Supplier</button>
+                </div>
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-50 text-[11px] font-bold uppercase text-slate-400 border-b border-slate-200">
+                            <tr>
+                                <th class="p-3.5">Nama Supplier</th>
+                                <th class="p-3.5">Kontak / HP</th>
+                                <th class="p-3.5">Alamat</th>
+                                <th class="p-3.5 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="suppliers-tbody" class="divide-y divide-slate-100"></tbody>
+                    </table>
                 </div>
             </section>
 
             <!-- SECTION PELANGGAN -->
             <section id="tab-customers" class="tab-content hidden space-y-4">
-                <h2 class="text-2xl font-extrabold text-slate-900">Data Pelanggan</h2>
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-                    <p class="text-xs text-slate-500">Daftar pelanggan langganan toko.</p>
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-slate-900">Data Pelanggan (Cloud)</h2>
+                        <p class="text-xs text-slate-500">Daftar pelanggan langganan toko.</p>
+                    </div>
+                    <button onclick="openCustomerModal()" class="bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow">Tambah Pelanggan</button>
+                </div>
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-50 text-[11px] font-bold uppercase text-slate-400 border-b border-slate-200">
+                            <tr>
+                                <th class="p-3.5">Nama Pelanggan</th>
+                                <th class="p-3.5">No. HP</th>
+                                <th class="p-3.5">Catatan</th>
+                                <th class="p-3.5 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customers-tbody" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- SECTION ACTIVITY LOG -->
+            <section id="tab-activity-log" class="tab-content hidden space-y-4">
+                <h2 class="text-2xl font-extrabold text-slate-900">Activity Log (Riwayat Aktivitas System)</h2>
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-50 text-[11px] font-bold uppercase text-slate-400 border-b border-slate-200">
+                            <tr>
+                                <th class="p-3.5">Waktu</th>
+                                <th class="p-3.5">User</th>
+                                <th class="p-3.5">Aktivitas</th>
+                                <th class="p-3.5">Rincian</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activity-log-tbody" class="divide-y divide-slate-100"></tbody>
+                    </table>
                 </div>
             </section>
 
@@ -523,6 +576,58 @@
         </div>
     </div>
 
+    <!-- MODAL SUPPLIER -->
+    <div id="supplier-modal" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center hidden no-print">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <h3 class="text-lg font-extrabold text-slate-900" id="sup-modal-title">Tambah Supplier Baru</h3>
+            <form onsubmit="saveSupplierCloud(event)" class="space-y-3">
+                <input type="hidden" id="sup-id">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nama Supplier *</label>
+                    <input type="text" id="sup-name" required class="w-full p-2.5 border rounded-xl text-sm font-medium">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">No. HP / Telepon</label>
+                    <input type="text" id="sup-phone" class="w-full p-2.5 border rounded-xl text-sm font-medium">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Alamat</label>
+                    <input type="text" id="sup-address" class="w-full p-2.5 border rounded-xl text-sm font-medium">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeSupplierModal()" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-xl text-xs font-bold">Batal</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-700 text-white rounded-xl text-xs font-extrabold">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL PELANGGAN -->
+    <div id="customer-modal" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center hidden no-print">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <h3 class="text-lg font-extrabold text-slate-900" id="cust-modal-title">Tambah Pelanggan Baru</h3>
+            <form onsubmit="saveCustomerCloud(event)" class="space-y-3">
+                <input type="hidden" id="cust-id">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nama Pelanggan *</label>
+                    <input type="text" id="cust-name" required class="w-full p-2.5 border rounded-xl text-sm font-medium">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">No. HP</label>
+                    <input type="text" id="cust-phone" class="w-full p-2.5 border rounded-xl text-sm font-medium">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Catatan</label>
+                    <input type="text" id="cust-note" placeholder="Langganan / Diskon" class="w-full p-2.5 border rounded-xl text-sm font-medium">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeCustomerModal()" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-xl text-xs font-bold">Batal</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-700 text-white rounded-xl text-xs font-extrabold">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- MODAL PRODUK FORM -->
     <div id="product-modal" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center hidden no-print">
         <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
@@ -598,9 +703,24 @@
             products: collection(dbCloud, "products"),
             sales: collection(dbCloud, "sales"),
             expenses: collection(dbCloud, "expenses"),
-            categories: collection(dbCloud, "categories")
+            categories: collection(dbCloud, "categories"),
+            suppliers: collection(dbCloud, "suppliers"),
+            customers: collection(dbCloud, "customers"),
+            activityLogs: collection(dbCloud, "activityLogs")
         };
         window.cloudUtils = { addDoc, doc, updateDoc, deleteDoc };
+
+        // Helper Activity Log
+        window.logActivity = async function(action, details) {
+            try {
+                await addDoc(window.cloudCollections.activityLogs, {
+                    timestamp: new Date().toLocaleString('id-ID'),
+                    user: window.currentRole || 'ADMIN',
+                    action: action,
+                    details: details
+                });
+            } catch(e) {}
+        };
 
         onSnapshot(window.cloudCollections.products, (snapshot) => {
             window.dbProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -629,6 +749,21 @@
             window.renderCategoriesList();
             window.populateCategoryDropdown();
         });
+
+        onSnapshot(window.cloudCollections.suppliers, (snapshot) => {
+            window.dbSuppliers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            window.renderSuppliersTable();
+        });
+
+        onSnapshot(window.cloudCollections.customers, (snapshot) => {
+            window.dbCustomers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            window.renderCustomersTable();
+        });
+
+        onSnapshot(window.cloudCollections.activityLogs, (snapshot) => {
+            window.dbActivityLogs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            window.renderActivityLogsTable();
+        });
     </script>
 
     <!-- APPLICATION LOGIC -->
@@ -637,8 +772,11 @@
         window.dbSales = [];
         window.dbExpenses = [];
         window.dbCategories = [];
+        window.dbSuppliers = [];
+        window.dbCustomers = [];
+        window.dbActivityLogs = [];
         let cart = [];
-        let currentRole = "ADMIN";
+        window.currentRole = "ADMIN";
 
         function formatRupiah(num) {
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num || 0);
@@ -756,16 +894,18 @@
                     }
                 }
 
+                const invoiceNo = `ATK-${Date.now()}`;
                 const saleData = {
-                    invoice: `ATK-${Date.now()}`,
+                    invoice: invoiceNo,
                     timestamp: new Date().toLocaleString('id-ID'),
                     total: total,
                     modal: totalModal,
-                    cashier: currentRole,
+                    cashier: window.currentRole,
                     method: document.getElementById('pay-method').value
                 };
 
                 await window.cloudUtils.addDoc(window.cloudCollections.sales, saleData);
+                await window.logActivity('Penjualan Kasir', `Transaksi ${invoiceNo} senilai ${formatRupiah(total)}`);
 
                 alert("Transaksi Berhasil Disimpan ke Cloud!");
                 closePaymentModal();
@@ -835,9 +975,11 @@
                 if (id) {
                     const docRef = window.cloudUtils.doc(window.dbCloud, "products", id);
                     await window.cloudUtils.updateDoc(docRef, productData);
+                    await window.logActivity('Edit Produk', `Mengubah data produk: ${productData.name}`);
                     alert("Perubahan produk berhasil disimpan ke Cloud!");
                 } else {
                     await window.cloudUtils.addDoc(window.cloudCollections.products, productData);
+                    await window.logActivity('Tambah Produk', `Menambahkan produk baru: ${productData.name}`);
                     alert("Produk baru berhasil disimpan ke Cloud!");
                 }
                 closeProductModal();
@@ -849,8 +991,10 @@
         async function deleteProductCloud(id) {
             if (!confirm("Hapus produk ini dari Cloud?")) return;
             try {
+                const p = window.dbProducts.find(x => x.id === id);
                 const docRef = window.cloudUtils.doc(window.dbCloud, "products", id);
                 await window.cloudUtils.deleteDoc(docRef);
+                await window.logActivity('Hapus Produk', `Menghapus produk: ${p ? p.name : id}`);
             } catch (err) {
                 alert("Gagal menghapus: " + err.message);
             }
@@ -871,6 +1015,7 @@
 
             try {
                 await window.cloudUtils.addDoc(window.cloudCollections.expenses, expenseData);
+                await window.logActivity('Pengeluaran', `Mencatat pengeluaran: ${expenseData.desc} (${formatRupiah(expenseData.amount)})`);
                 closeExpenseModal();
                 alert("Pengeluaran toko berhasil disimpan ke Cloud!");
             } catch(err) {
@@ -898,7 +1043,7 @@
             await window.cloudUtils.deleteDoc(docRef);
         }
 
-        // CATEGORIES FUNCTIONS (WITH EDIT & DELETE)
+        // CATEGORIES FUNCTIONS
         window.renderCategoriesList = function() {
             const list = document.getElementById('categories-cloud-list');
             if (window.dbCategories.length === 0) {
@@ -948,6 +1093,154 @@
             await window.cloudUtils.deleteDoc(docRef);
         }
 
+        // SUPPLIER FUNCTIONS
+        function openSupplierModal() {
+            document.getElementById('sup-id').value = '';
+            document.getElementById('sup-name').value = '';
+            document.getElementById('sup-phone').value = '';
+            document.getElementById('sup-address').value = '';
+            document.getElementById('sup-modal-title').innerText = 'Tambah Supplier Baru';
+            document.getElementById('supplier-modal').classList.remove('hidden');
+        }
+
+        function closeSupplierModal() { document.getElementById('supplier-modal').classList.add('hidden'); }
+
+        async function saveSupplierCloud(e) {
+            e.preventDefault();
+            const id = document.getElementById('sup-id').value;
+            const data = {
+                name: document.getElementById('sup-name').value,
+                phone: document.getElementById('sup-phone').value,
+                address: document.getElementById('sup-address').value
+            };
+
+            try {
+                if (id) {
+                    const docRef = window.cloudUtils.doc(window.dbCloud, "suppliers", id);
+                    await window.cloudUtils.updateDoc(docRef, data);
+                    await window.logActivity('Edit Supplier', `Memperbarui supplier: ${data.name}`);
+                } else {
+                    await window.cloudUtils.addDoc(window.cloudCollections.suppliers, data);
+                    await window.logActivity('Tambah Supplier', `Menambah supplier: ${data.name}`);
+                }
+                closeSupplierModal();
+                alert("Data supplier berhasil disimpan!");
+            } catch(err) {
+                alert("Gagal: " + err.message);
+            }
+        }
+
+        window.renderSuppliersTable = function() {
+            document.getElementById('suppliers-tbody').innerHTML = window.dbSuppliers.map(s => `
+                <tr>
+                    <td class="p-3.5 font-bold text-slate-800">${s.name}</td>
+                    <td class="p-3.5">${s.phone || '-'}</td>
+                    <td class="p-3.5 text-xs text-slate-500">${s.address || '-'}</td>
+                    <td class="p-3.5 text-center space-x-2">
+                        <button onclick="editSupplierCloud('${s.id}')" class="text-blue-600 font-bold text-xs hover:underline">Edit</button>
+                        <button onclick="deleteSupplierCloud('${s.id}')" class="text-red-600 font-bold text-xs hover:underline">Hapus</button>
+                    </td>
+                </tr>
+            `).join('');
+        };
+
+        window.editSupplierCloud = function(id) {
+            const s = window.dbSuppliers.find(x => x.id === id);
+            if (!s) return;
+            openSupplierModal();
+            document.getElementById('sup-modal-title').innerText = 'Edit Supplier';
+            document.getElementById('sup-id').value = s.id;
+            document.getElementById('sup-name').value = s.name || '';
+            document.getElementById('sup-phone').value = s.phone || '';
+            document.getElementById('sup-address').value = s.address || '';
+        };
+
+        async function deleteSupplierCloud(id) {
+            if(!confirm("Hapus supplier ini?")) return;
+            const docRef = window.cloudUtils.doc(window.dbCloud, "suppliers", id);
+            await window.cloudUtils.deleteDoc(docRef);
+        }
+
+        // CUSTOMER FUNCTIONS
+        function openCustomerModal() {
+            document.getElementById('cust-id').value = '';
+            document.getElementById('cust-name').value = '';
+            document.getElementById('cust-phone').value = '';
+            document.getElementById('cust-note').value = '';
+            document.getElementById('cust-modal-title').innerText = 'Tambah Pelanggan Baru';
+            document.getElementById('customer-modal').classList.remove('hidden');
+        }
+
+        function closeCustomerModal() { document.getElementById('customer-modal').classList.add('hidden'); }
+
+        async function saveCustomerCloud(e) {
+            e.preventDefault();
+            const id = document.getElementById('cust-id').value;
+            const data = {
+                name: document.getElementById('cust-name').value,
+                phone: document.getElementById('cust-phone').value,
+                note: document.getElementById('cust-note').value
+            };
+
+            try {
+                if (id) {
+                    const docRef = window.cloudUtils.doc(window.dbCloud, "customers", id);
+                    await window.cloudUtils.updateDoc(docRef, data);
+                    await window.logActivity('Edit Pelanggan', `Memperbarui pelanggan: ${data.name}`);
+                } else {
+                    await window.cloudUtils.addDoc(window.cloudCollections.customers, data);
+                    await window.logActivity('Tambah Pelanggan', `Menambah pelanggan: ${data.name}`);
+                }
+                closeCustomerModal();
+                alert("Data pelanggan berhasil disimpan!");
+            } catch(err) {
+                alert("Gagal: " + err.message);
+            }
+        }
+
+        window.renderCustomersTable = function() {
+            document.getElementById('customers-tbody').innerHTML = window.dbCustomers.map(c => `
+                <tr>
+                    <td class="p-3.5 font-bold text-slate-800">${c.name}</td>
+                    <td class="p-3.5">${c.phone || '-'}</td>
+                    <td class="p-3.5 text-xs text-slate-500">${c.note || '-'}</td>
+                    <td class="p-3.5 text-center space-x-2">
+                        <button onclick="editCustomerCloud('${c.id}')" class="text-blue-600 font-bold text-xs hover:underline">Edit</button>
+                        <button onclick="deleteCustomerCloud('${c.id}')" class="text-red-600 font-bold text-xs hover:underline">Hapus</button>
+                    </td>
+                </tr>
+            `).join('');
+        };
+
+        window.editCustomerCloud = function(id) {
+            const c = window.dbCustomers.find(x => x.id === id);
+            if (!c) return;
+            openCustomerModal();
+            document.getElementById('cust-modal-title').innerText = 'Edit Pelanggan';
+            document.getElementById('cust-id').value = c.id;
+            document.getElementById('cust-name').value = c.name || '';
+            document.getElementById('cust-phone').value = c.phone || '';
+            document.getElementById('cust-note').value = c.note || '';
+        };
+
+        async function deleteCustomerCloud(id) {
+            if(!confirm("Hapus pelanggan ini?")) return;
+            const docRef = window.cloudUtils.doc(window.dbCloud, "customers", id);
+            await window.cloudUtils.deleteDoc(docRef);
+        }
+
+        // ACTIVITY LOGS FUNCTION
+        window.renderActivityLogsTable = function() {
+            document.getElementById('activity-log-tbody').innerHTML = window.dbActivityLogs.map(l => `
+                <tr>
+                    <td class="p-3.5 text-xs font-mono">${l.timestamp}</td>
+                    <td class="p-3.5"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-bold">${l.user}</span></td>
+                    <td class="p-3.5 font-bold text-slate-800">${l.action}</td>
+                    <td class="p-3.5 text-xs text-slate-600">${l.details}</td>
+                </tr>
+            `).join('');
+        };
+
         window.populateRestockSelect = function() {
             const select = document.getElementById('restock-product-select');
             if (select) {
@@ -963,6 +1256,7 @@
             if (product && qty > 0) {
                 const docRef = window.cloudUtils.doc(window.dbCloud, "products", product.id);
                 await window.cloudUtils.updateDoc(docRef, { stock: product.stock + qty });
+                await window.logActivity('Restock', `Restock barang ${product.name} sebanyak ${qty}`);
                 alert("Stok berhasil ditambahkan!");
             }
         }
