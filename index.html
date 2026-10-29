@@ -209,6 +209,17 @@
                     </div>
                 </div>
 
+                <!-- GRAFIK OMZET PENJUALAN -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-extrabold text-slate-800 text-sm">Grafik Tren Omzet Penjualan</h3>
+                        <span class="text-xs text-slate-400 font-medium">Real-Time Cloud Data</span>
+                    </div>
+                    <div class="h-64">
+                        <canvas id="omzetChart"></canvas>
+                    </div>
+                </div>
+
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div class="p-4 border-b border-slate-200 flex justify-between items-center">
                         <h3 class="font-extrabold text-slate-800">Transaksi Penjualan Terbaru (Real-Time)</h3>
@@ -796,6 +807,7 @@
         window.dbActivityLogs = [];
         let cart = [];
         window.currentRole = "ADMIN";
+        let omzetChartInstance = null;
 
         function formatRupiah(num) {
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num || 0);
@@ -1393,6 +1405,14 @@
             document.getElementById('dash-trx-today-count').innerText = `${window.dbSales.length} Transaksi`;
             document.getElementById('dash-total-products').innerText = `${window.dbProducts.length} Produk`;
 
+            // PERBAIKAN PERINGATAN STOK
+            const stokHabisCount = window.dbProducts.filter(p => (p.stock || 0) <= 0).length;
+            const stokMenipisCount = window.dbProducts.filter(p => (p.stock || 0) > 0 && (p.stock || 0) <= (p.minStock || 5)).length;
+
+            document.getElementById('dash-stok-menipis').innerText = `${stokMenipisCount} Menipis`;
+            document.getElementById('dash-stok-habis').innerText = `${stokHabisCount} Habis`;
+
+            // TRANSAKSI TERBARU
             document.getElementById('dash-recent-sales-tbody').innerHTML = window.dbSales.slice(0, 5).map(s => `
                 <tr>
                     <td class="p-3.5 font-bold text-slate-800">${s.invoice}</td>
@@ -1402,7 +1422,61 @@
                     <td class="p-3.5 text-xs">${s.cashier}</td>
                 </tr>
             `).join('');
+
+            // RENDER GRAFIK OMZET
+            renderOmzetChart();
         };
+
+        function renderOmzetChart() {
+            const ctx = document.getElementById('omzetChart');
+            if (!ctx) return;
+
+            // Group sales by date
+            const salesByDate = {};
+            window.dbSales.slice(-7).forEach(s => {
+                const dateKey = s.timestamp ? s.timestamp.split(',')[0] : 'Hari ini';
+                salesByDate[dateKey] = (salesByDate[dateKey] || 0) + s.total;
+            });
+
+            const labels = Object.keys(salesByDate);
+            const dataValues = Object.values(salesByDate);
+
+            if (omzetChartInstance) {
+                omzetChartInstance.destroy();
+            }
+
+            omzetChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.length > 0 ? labels : ['Belum Ada Transaksi'],
+                    datasets: [{
+                        label: 'Omzet Penjualan (Rp)',
+                        data: dataValues.length > 0 ? dataValues : [0],
+                        borderColor: '#059669',
+                        backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#047857'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) { return 'Rp ' + value.toLocaleString('id-ID'); }
+                            }
+                        }
+                    }
+                }
+            });
+        }
 
         window.renderReports = function() {
             const omzet = window.dbSales.reduce((acc, s) => acc + s.total, 0);
